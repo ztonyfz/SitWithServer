@@ -1,6 +1,8 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -16,13 +18,18 @@ import org.jdom2.output.XMLOutputter;
 public class MainServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
-	public void init() throws ServletException {
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+	public RestaurantService restaurantService;
+	
+	public RequestService requestService;
+	
+	public FeedbackService feedbackService;
+	
+	public void init() {
+		restaurantService = new RestaurantService();
+		requestService = new RequestService();
+		feedbackService = new FeedbackService();
 	}
+	
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
 		String uri = request.getRequestURI();
@@ -30,7 +37,7 @@ public class MainServlet extends HttpServlet {
 		response.setContentType("text/html");
 		System.out.println(type);
 		
-		Element restaurant = new Element("restaurant");
+		/*Element restaurant = new Element("restaurant");
 		Element name = new Element("name");
 		name.setText("Union Grill");
 		restaurant.addContent(name);
@@ -47,9 +54,45 @@ public class MainServlet extends HttpServlet {
 		
 		XMLOutputter xmlOutput = new XMLOutputter();
 		xmlOutput.setFormat(Format.getPrettyFormat());
-		xmlOutput.output(document, response.getOutputStream());
+		xmlOutput.output(document, response.getOutputStream());*/
 		
-        
+		try {
+			String action = request.getParameter("action");
+			Document document = null;
+			if (action.equals("getRestaurants")) {
+				document = restaurantService.getRestaurants();
+			} else if (action.equals("getRestaurant")) {
+				document = restaurantService.getRestaurant(request.getParameter("restaurantId"));
+			} else if (action.equals("getAvailableTables")) {
+				document = restaurantService.getAvailableTables(request.getParameter("restaurantId"));
+			} else if (action.equals("makeRequest")) {
+				requestService.makeRequest(request.getParameter("userId"), request.getParameter("restaurant_id"), request.getParameter("tableId"));
+			} else if (action.equals("getRequests")) {
+				document = requestService.getRequests(request.getParameter("userId"));
+			} else if (action.equals("getTable")) {
+				document = requestService.getTable(request.getParameter("tableId"));
+			} else if (action.equals("giveFeedback")) {
+				feedbackService.giveFeedBack(request.getParameter("userId"), request.getParameter("tableId"), request.getParameter("contents"));
+			}
+			
+			if (document != null) {
+				XMLOutputter xmlOutput = new XMLOutputter();
+				xmlOutput.setFormat(Format.getPrettyFormat());
+				xmlOutput.output(document, response.getOutputStream());
+			}
+			
+		}
+		
+		catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
+	
+	
+	
+	
+	
+	
 
 }
